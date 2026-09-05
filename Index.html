@@ -1,0 +1,2550 @@
+<!-- Wedding Planner · Claudia & Jorge · Google Apps Script Web App -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nuestra Boda · Organizador</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Paleta del moodboard "Claudia y Jorge": cálida y natural — marfil, taupe champagne, espresso, salvia */
+  --green-900:#3a2c20; --green-800:#4a3728; --green-700:#5f4535; --green-600:#7a6450;
+  --gold:#b79b74; --gold-soft:#d8c7ab; --gold-deep:#9c8054;
+  --cream:#f4f0e8; --cream-2:#ece4d6; --card:#faf6ee; --card-2:#f2ebdd;
+  --ink:#2e2620; --muted:#8f8473; --line:#e7ddcb; --line-2:#dccdb4;
+  --danger:#a2503c; --danger-bg:#f3e5de; --warn:#9c7b3f; --warn-bg:#f4ecd7; --ok:#7c8663;
+  --shadow:0 10px 30px rgba(58,44,32,.12); --shadow-sm:0 4px 14px rgba(58,44,32,.09);
+  --r:16px; --r-sm:11px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:'Jost',system-ui,sans-serif; color:var(--ink);
+  background:var(--cream);
+  -webkit-font-smoothing:antialiased;
+}
+.serif{font-family:'Playfair Display',Georgia,serif}
+h1,h2,h3{font-family:'Playfair Display',Georgia,serif; margin:0; font-weight:600; letter-spacing:.2px}
+a{color:inherit}
+button{font-family:inherit;cursor:pointer}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:20px}
+
+/* ---------- Layout ---------- */
+.app{display:flex;min-height:100vh}
+.sidebar{
+  width:250px;flex:0 0 250px;background:var(--card);border-right:1px solid var(--line);
+  padding:22px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh;
+}
+.brand{display:flex;gap:12px;align-items:center;padding:6px 8px 16px}
+.brand .mono{
+  width:44px;height:44px;border-radius:12px;background:var(--green-800);color:var(--gold-soft);
+  display:grid;place-items:center;font-family:'Playfair Display',serif;font-size:24px;font-weight:700;
+}
+.brand small{display:block;color:var(--muted);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+.brand b{font-family:'Playfair Display',serif;font-size:19px;font-weight:600}
+.nav-group{margin-top:12px;padding:0 8px;color:var(--muted);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase}
+.nav a{
+  display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;color:var(--ink);
+  text-decoration:none;font-size:14.5px;font-weight:400;transition:.15s;cursor:pointer
+}
+.nav a .ic{width:20px;text-align:center;opacity:.85}
+.nav a:hover{background:var(--card-2)}
+.nav a.active{background:var(--green-800);color:#fff;box-shadow:var(--shadow-sm)}
+.nav a.active .ic{opacity:1}
+.side-foot{margin-top:auto;padding:12px 8px 0;border-top:1px solid var(--line);color:var(--muted);font-size:12px}
+.side-foot .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px}
+
+.main{flex:1;min-width:0;padding:26px 34px 60px;max-width:1180px}
+@media(max-width:900px){
+  .app{flex-direction:column}
+  .sidebar{width:100%;flex:none;height:auto;position:relative;flex-direction:row;flex-wrap:wrap;overflow:auto}
+  .side-foot{display:none}.nav-group{display:none}
+  .main{padding:20px 16px 60px}
+}
+
+/* ---------- Banner ---------- */
+.banner{
+  background:linear-gradient(135deg,#dccfb7,#cbb99b);color:var(--ink);border-radius:var(--r);
+  padding:22px 26px;box-shadow:var(--shadow);margin-bottom:22px;position:relative;overflow:hidden
+}
+.banner:after{content:"";position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.28)}
+.banner .kick{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--green-800);opacity:.85}
+.banner h1{font-size:34px;margin:2px 0 4px;display:flex;align-items:center;gap:12px}
+.banner p{margin:0;color:rgba(46,38,32,.72);font-size:15px;max-width:640px;font-family:'Playfair Display',serif;font-style:italic}
+.banner .actions{position:absolute;right:22px;bottom:20px;display:flex;gap:10px}
+@media(max-width:640px){.banner .actions{position:static;margin-top:14px}}
+
+/* ---------- Buttons ---------- */
+.btn{border:1px solid transparent;border-radius:999px;padding:9px 16px;font-size:13.5px;font-weight:500;display:inline-flex;align-items:center;gap:7px;transition:.15s;background:#fff;color:var(--ink)}
+.btn:hover{transform:translateY(-1px)}
+.btn.gold{background:var(--gold);color:#3a2f13;border-color:var(--gold-deep)}
+.btn.gold:hover{background:var(--gold-soft)}
+.btn.green{background:var(--green-800);color:#fff}
+.btn.ghost{background:transparent;border-color:rgba(58,44,32,.28);color:var(--ink)}
+.banner .btn.gold,.hero .btn.gold{background:var(--green-800);color:#fff;border-color:var(--green-900)}
+.banner .btn.gold:hover,.hero .btn.gold:hover{background:var(--green-700)}
+.btn.line{background:#fff;border-color:var(--line-2);color:var(--ink)}
+.btn.sm{padding:6px 12px;font-size:12.5px}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+
+/* ---------- Cards / KPI ---------- */
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:820px){.g4{grid-template-columns:repeat(2,1fr)}.g3,.g2{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px;box-shadow:var(--shadow-sm)}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.kpi .lbl{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.kpi .val{font-family:'Playfair Display',serif;font-size:30px;font-weight:600;margin-top:3px;line-height:1}
+.kpi .sub{font-size:12px;color:var(--muted);margin-top:5px}
+.kpi.accent{background:linear-gradient(135deg,#fbf5e5,#f6edd4);border-color:var(--gold-soft)}
+.kpi .val.dg{color:var(--danger)} .kpi .val.ok{color:var(--ok)}
+
+.section-title{display:flex;align-items:center;justify-content:space-between;margin:26px 2px 12px}
+.section-title h2{font-size:24px}
+.section-title .hint{color:var(--muted);font-size:14px;font-family:'Playfair Display',serif;font-style:italic}
+
+/* progress */
+.bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden;position:relative}
+.bar>span{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,var(--green-700),var(--gold))}
+.bar.thin{height:7px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.legend b{color:var(--ink);font-weight:500}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:11.5px;font-weight:500;border:1px solid var(--line-2);background:#fff}
+.badge.green{background:#e9ebdd;border-color:#d3d7bf;color:#5a6340}
+.badge.gold{background:#f6edd4;border-color:var(--gold-soft);color:#7a5f22}
+.badge.gray{background:#efeadd;color:#77715e}
+.badge.red{background:var(--danger-bg);border-color:#e2c4bd;color:var(--danger)}
+.badge.blue{background:#e6ecec;border-color:#c8d4d4;color:#3f5453}
+
+/* tables */
+.tbl-wrap{background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead th{text-align:left;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:13px 16px;background:var(--card-2);border-bottom:1px solid var(--line)}
+tbody td{padding:12px 16px;border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fdfbf4}
+.t-name{font-weight:500}
+.t-sub{color:var(--muted);font-size:12px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.row-actions{display:flex;gap:6px;justify-content:flex-end;opacity:.5}
+tr:hover .row-actions{opacity:1}
+.icon-btn{border:1px solid var(--line-2);background:#fff;border-radius:8px;width:30px;height:30px;display:grid;place-items:center;font-size:13px}
+.icon-btn:hover{background:var(--card-2)}
+.icon-btn.del:hover{color:var(--danger);border-color:var(--danger)}
+
+/* toolbar */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+.toolbar input,.toolbar select{
+  border:1px solid var(--line-2);background:#fff;border-radius:999px;padding:9px 14px;font-family:inherit;font-size:13.5px;color:var(--ink)
+}
+.toolbar .search{flex:1;min-width:200px}
+.spacer{flex:1}
+
+/* alerts */
+.alert{border-radius:12px;padding:12px 15px;font-size:13px;display:flex;gap:10px;align-items:flex-start;margin-top:10px;line-height:1.4}
+.alert.warn{background:var(--warn-bg);border:1px solid #ecdcae;color:#77591f}
+.alert.red{background:var(--danger-bg);border:1px solid #e2c4bd;color:var(--danger)}
+.alert .ic{font-size:15px}
+
+/* timeline (cronograma) */
+.tl-block{margin:18px 0 8px;display:flex;align-items:center;gap:10px;color:var(--muted);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+.tl-block .ln{flex:1;height:1px;background:var(--line)}
+.tl-item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;display:flex;gap:16px;align-items:flex-start;box-shadow:var(--shadow-sm)}
+.tl-item .time{min-width:96px}
+.tl-item .time b{font-family:'Playfair Display',serif;font-size:19px}
+.tl-item .time span{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+.tl-item .body{flex:1}
+.tl-item .body h4{margin:0;font-size:16px;font-family:'Playfair Display',serif;font-weight:600}
+.tl-item .meta{color:var(--muted);font-size:12.5px;margin-top:3px;display:flex;gap:14px;flex-wrap:wrap}
+.tl-dot{width:11px;height:11px;border-radius:50%;background:var(--green-700);margin-top:6px;flex:0 0 auto;box-shadow:0 0 0 4px #efe7d7}
+
+/* gantt */
+.gantt{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:6px 0 14px;overflow-x:auto}
+.gantt-head{display:grid;position:relative;border-bottom:1px solid var(--line);padding:0 0 8px}
+.gantt-row{display:grid;align-items:center;border-bottom:1px solid var(--line);min-height:52px}
+.gantt-row:last-child{border-bottom:none}
+.gantt-label{padding:10px 16px;position:sticky;left:0;background:var(--card);z-index:2;border-right:1px solid var(--line)}
+.gantt-label b{font-size:13.5px;display:block}
+.gantt-label span{font-size:11.5px;color:var(--muted)}
+.gantt-track{position:relative;height:100%}
+.gantt-months{display:flex;font-size:11px;color:var(--muted);letter-spacing:.05em}
+.gantt-months div{flex:1;padding:8px 8px;border-left:1px solid var(--line);text-transform:capitalize}
+.gbar{position:absolute;top:50%;transform:translateY(-50%);height:26px;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:11.5px;color:#fff;white-space:nowrap;box-shadow:var(--shadow-sm);cursor:pointer}
+.gbar.cotizado{background:linear-gradient(90deg,#c3b39c,#a89373)}
+.gbar.contratado{background:linear-gradient(90deg,#7a5c40,#5f4535)}
+.gbar.pagado{background:linear-gradient(90deg,var(--gold),var(--gold-deep));color:#3a2f13}
+.gantt-today{position:absolute;top:0;bottom:0;width:2px;background:var(--danger);z-index:3}
+.gantt-today b{position:absolute;top:-2px;left:-18px;font-size:9px;background:var(--danger);color:#fff;padding:2px 5px;border-radius:5px}
+
+/* modal */
+.overlay{position:fixed;inset:0;background:rgba(45,50,35,.42);backdrop-filter:blur(2px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--cream);border-radius:20px;width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.3)}
+.modal-head{background:linear-gradient(135deg,#dccfb7,#cbb99b);color:var(--ink);padding:18px 22px;border-radius:20px 20px 0 0;position:sticky;top:0}
+.modal-head h3{font-size:22px}
+.modal-head small{color:var(--green-800);letter-spacing:.16em;text-transform:uppercase;font-size:10.5px}
+.modal-body{padding:20px 22px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;letter-spacing:.04em}
+.field input,.field select,.field textarea{
+  width:100%;border:1px solid var(--line-2);background:#fff;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;color:var(--ink)
+}
+.field textarea{min-height:64px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-foot{padding:6px 22px 22px;display:flex;gap:10px;justify-content:flex-end}
+
+/* misc */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:820px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;transition:.15s}
+.tile:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.tile .ic{width:38px;height:38px;border-radius:10px;background:var(--card-2);display:grid;place-items:center;font-size:18px;margin-bottom:10px}
+.tile b{font-family:'Playfair Display',serif;font-size:18px;font-weight:600;display:block}
+.tile span{color:var(--muted);font-size:12.5px;line-height:1.35;display:block;margin-top:2px}
+.hero{
+  background:linear-gradient(135deg,#dccfb7,#cbb99b);color:var(--ink);border-radius:var(--r);
+  padding:22px 26px;display:flex;align-items:center;gap:24px;box-shadow:var(--shadow);margin-bottom:20px;flex-wrap:wrap
+}
+.hero .days{font-family:'Playfair Display',serif;font-size:56px;font-weight:700;line-height:.9}
+.hero .days small{display:block;font-family:'Jost',sans-serif;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-deep);font-weight:500;margin-top:4px}
+.hero .sep{width:1px;align-self:stretch;background:rgba(58,44,32,.18)}
+.hero .info b{font-family:'Playfair Display',serif;font-size:22px}
+.hero .info span{display:block;color:rgba(46,38,32,.66);font-size:13px}
+.hero .spacer{flex:1}
+.empty{text-align:center;color:var(--muted);padding:40px 20px;font-size:14px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--green-800);color:#fff;padding:12px 20px;border-radius:12px;font-size:14px;box-shadow:var(--shadow);opacity:0;transition:.25s;z-index:80;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.loading{position:fixed;inset:0;background:var(--cream);display:grid;place-items:center;z-index:100}
+.loading .spin{width:42px;height:42px;border:3px solid var(--line);border-top-color:var(--green-700);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.pill-inline{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<div id="loading" class="loading"><div class="spin"></div></div>
+
+<div class="app" id="app" style="display:none">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mono" id="brandMono">CJ</div>
+      <div>
+        <small>Nuestra boda</small>
+        <b id="brandNames">Claudia &amp; Jorge</b>
+      </div>
+    </div>
+    <div class="nav-group">General</div>
+    <nav class="nav" id="nav">
+      <a data-view="inicio" class="active"><span class="ic">🏠</span> Inicio</a>
+      <div class="nav-group">Organización</div>
+      <a data-view="presupuesto"><span class="ic">💰</span> Presupuesto</a>
+      <a data-view="proveedores"><span class="ic">🏛️</span> Proveedores</a>
+      <div class="nav-group">Invitados</div>
+      <a data-view="invitados"><span class="ic">👥</span> Invitados y mesas</a>
+      <div class="nav-group">Día de la boda</div>
+      <a data-view="cronograma"><span class="ic">⏰</span> Cronograma</a>
+      <div class="nav-group">Agenda</div>
+      <a data-view="citas"><span class="ic">📅</span> Citas &amp; Gantt</a>
+    </nav>
+    <div class="side-foot">
+      <span class="dot"></span><span id="saveStatus">Todo guardado</span>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main" id="content"></main>
+</div>
+
+<!-- Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="modal-head"><small id="modalKick">Editar</small><h3 id="modalTitle">Título</h3></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-foot">
+      <button class="btn line" onclick="closeModal()">Cancelar</button>
+      <button class="btn gold" id="modalSave">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================================
+   DATA LAYER  ·  works in two modes:
+   - Inside Apps Script  -> uses google.script.run (real Sheets + Calendar)
+   - Standalone (preview) -> uses in-memory sample data
+   ========================================================================= */
+const IN_GAS = (typeof google !== 'undefined' && google.script && google.script.run);
+
+function server(fn, ...args){
+  if(IN_GAS){
+    return new Promise((res,rej)=>{
+      google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args);
+    });
+  }
+  return MockServer[fn](...args); // returns a Promise
+}
+
+/* ---- Sample data (mirrors the reference, in PEN) ---- */
+const SAMPLE = {
+  config:{
+    pareja:"Claudia & Jorge",
+    fecha:"2026-12-12",
+    lugar:"Lima, Perú",
+    moneda:"PEN",
+    presupuestoTotal:195400,
+    invitadosPlan:200,
+    tipoCambio:3.4
+  },
+  presupuesto:[
+    {
+      id:"p1",
+      categoria:"Wedding Planner",
+      estimado:0,
+      notas:"No estaba en el presupuesto de la planner"
+    },
+    {
+      id:"p2",
+      categoria:"Salón / Local",
+      estimado:22100,
+      notas:"ANCPP · alquiler US$6,500 @ S/3.40"
+    },
+    {
+      id:"p3",
+      categoria:"Catering y bebidas",
+      estimado:77000,
+      notas:"Mónica Tremolada · costo x pax"
+    },
+    {
+      id:"p4",
+      categoria:"Licores y barra",
+      estimado:13600,
+      notas:"Licores 12,000 + insumos barra 1,600"
+    },
+    {
+      id:"p5",
+      categoria:"Decoración y flores",
+      estimado:27950,
+      notas:"Decoración adicional 26,950 + bouquet 1,000"
+    },
+    {
+      id:"p6",
+      categoria:"Música y DJ",
+      estimado:7000,
+      notas:"DJ + sonido y luces · 8h"
+    },
+    {
+      id:"p7",
+      categoria:"Fotografía",
+      estimado:8840,
+      notas:"US$2,600 @ S/3.40 · 12h"
+    },
+    {
+      id:"p8",
+      categoria:"Video / Cinematografía",
+      estimado:8840,
+      notas:"US$2,600 @ S/3.40 · 12h"
+    },
+    {
+      id:"p9",
+      categoria:"Vestuario novia",
+      estimado:8500,
+      notas:"Vestido · Luna Blanco · US$2,500 @ S/3.40"
+    },
+    {
+      id:"p10",
+      categoria:"Belleza (novia)",
+      estimado:3300,
+      notas:"Maquillaje y peinado"
+    },
+    {
+      id:"p11",
+      categoria:"Vestuario novio",
+      estimado:5500,
+      notas:"Traje"
+    },
+    {
+      id:"p12",
+      categoria:"Alianzas",
+      estimado:0,
+      notas:"A cargo de los novios"
+    },
+    {
+      id:"p13",
+      categoria:"Papelería e invitaciones",
+      estimado:670,
+      notas:"Diseño invitaciones 420 + señalética 250"
+    },
+    {
+      id:"p14",
+      categoria:"Torta",
+      estimado:2000,
+      notas:"Costo referencial"
+    },
+    {
+      id:"p15",
+      categoria:"Producción y montaje",
+      estimado:1800,
+      notas:"Grupo electrógeno (montaje no estaba presupuestado)"
+    },
+    {
+      id:"p16",
+      categoria:"Show / Hora loca",
+      estimado:3800,
+      notas:"Hora loca 2,200 + cotillón 1,600"
+    },
+    {
+      id:"p17",
+      categoria:"Ceremonia (iglesia)",
+      estimado:4500,
+      notas:"Flores 2,300 + coro/grupo 2,200"
+    },
+    {
+      id:"p18",
+      categoria:"Seguridad",
+      estimado:0,
+      notas:"Por cotizar"
+    }
+  ],
+  proveedores:[
+    {
+      id:"v1",
+      nombre:"Wedding Planner",
+      categoria:"Wedding Planner",
+      estado:"Contratado",
+      contacto:"",
+      cotizado:10800,
+      pagado:5400,
+      notas:"Por pagar S/5,400"
+    },
+    {
+      id:"v2",
+      nombre:"ANCPP (Local)",
+      categoria:"Salón / Local",
+      estado:"Contratado",
+      contacto:"",
+      cotizado:22100,
+      pagado:11050,
+      notas:"US$6,500 @ S/3.40 · garantía S/1,000 · por pagar US$3,250"
+    },
+    {
+      id:"v3",
+      nombre:"Alexis (Save the date)",
+      categoria:"Papelería e invitaciones",
+      estado:"Contratado",
+      contacto:"",
+      cotizado:2040,
+      pagado:1020,
+      notas:"US$600 @ S/3.40"
+    },
+    {
+      id:"v4",
+      nombre:"Mata (Maquillaje y peinado)",
+      categoria:"Belleza (novia)",
+      estado:"Contratado",
+      contacto:"",
+      cotizado:5000,
+      pagado:2500,
+      notas:""
+    },
+    {
+      id:"v5",
+      nombre:"DJ Andrés Viches",
+      categoria:"Música y DJ",
+      estado:"Contratado",
+      contacto:"",
+      cotizado:4500,
+      pagado:2250,
+      notas:""
+    },
+    {
+      id:"v6",
+      nombre:"Luna Blanco (Vestido)",
+      categoria:"Vestuario novia",
+      estado:"Contratado",
+      contacto:"",
+      cotizado:9860,
+      pagado:5916,
+      notas:"US$2,900 @ S/3.40"
+    },
+    {
+      id:"v7",
+      nombre:"Frank Andonaire (Fotos)",
+      categoria:"Fotografía",
+      estado:"Contratado",
+      contacto:"",
+      cotizado:11424,
+      pagado:3264,
+      notas:"US$3,360 @ S/3.40 · 12h"
+    },
+    {
+      id:"v8",
+      nombre:"Frank Andonaire (Video)",
+      categoria:"Video / Cinematografía",
+      estado:"Contratado",
+      contacto:"",
+      cotizado:5440,
+      pagado:2176,
+      notas:"US$1,600 @ S/3.40 · 12h"
+    },
+    {
+      id:"v9",
+      nombre:"Lovepot (Invitaciones)",
+      categoria:"Papelería e invitaciones",
+      estado:"Contratado",
+      contacto:"",
+      cotizado:3500,
+      pagado:1750,
+      notas:""
+    },
+    {
+      id:"v10",
+      nombre:"Mónica Tremolada (Catering)",
+      categoria:"Catering y bebidas",
+      estado:"Contratado",
+      contacto:"",
+      cotizado:83000,
+      pagado:6000,
+      notas:"Por pagar S/77,000"
+    },
+    {
+      id:"v11",
+      nombre:"Estructuras (Montaje)",
+      categoria:"Producción y montaje",
+      estado:"Contratado",
+      contacto:"",
+      cotizado:4500,
+      pagado:0,
+      notas:"Por pagar S/4,500"
+    },
+    {
+      id:"v12",
+      nombre:"Grupo Electrógeno",
+      categoria:"Producción y montaje",
+      estado:"Contratado",
+      contacto:"",
+      cotizado:1800,
+      pagado:0,
+      notas:"Por pagar S/1,800"
+    },
+    {
+      id:"v13",
+      nombre:"Alianzas (por decidir)",
+      categoria:"Alianzas",
+      estado:"Cotizado",
+      contacto:"",
+      cotizado:0,
+      pagado:0,
+      notas:"Opciones: Casa Banchero, Aldo"
+    },
+    {
+      id:"v14",
+      nombre:"Terno novio (por decidir)",
+      categoria:"Vestuario novio",
+      estado:"Cotizado",
+      contacto:"",
+      cotizado:0,
+      pagado:0,
+      notas:"Opciones: Yorgo Stratouris, Casa España, Firenze"
+    },
+    {
+      id:"v15",
+      nombre:"Pancho Security",
+      categoria:"Seguridad",
+      estado:"Cotizado",
+      contacto:"",
+      cotizado:0,
+      pagado:0,
+      notas:"Por cotizar"
+    },
+    {
+      id:"v16",
+      nombre:"Hora Loca (por decidir)",
+      categoria:"Show / Hora loca",
+      estado:"Cotizado",
+      contacto:"",
+      cotizado:0,
+      pagado:0,
+      notas:"Incluye cotillón · evaluar 'Naricitas'"
+    }
+  ],
+  invitados:[
+    {
+      id:"g1",
+      invitacion:"Dante",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:5,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g2",
+      invitacion:"Delia",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g3",
+      invitacion:"Daniela",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g4",
+      invitacion:"Brenda",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g5",
+      invitacion:"Hugo",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g6",
+      invitacion:"Edith",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g7",
+      invitacion:"Rau",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g8",
+      invitacion:"Chcha",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g9",
+      invitacion:"Julio",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g10",
+      invitacion:"Anibal",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:3,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g11",
+      invitacion:"Joao",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g12",
+      invitacion:"Bett B + Guillermo",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g13",
+      invitacion:"Mery",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g14",
+      invitacion:"Liss",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g15",
+      invitacion:"Diego",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g16",
+      invitacion:"Paty",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g17",
+      invitacion:"Angela",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g18",
+      invitacion:"Andrea",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g19",
+      invitacion:"Cinthia",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g20",
+      invitacion:"MEmo",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g21",
+      invitacion:"Liss",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g22",
+      invitacion:"Linzay",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g23",
+      invitacion:"Gianella",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g24",
+      invitacion:"Amadeo",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g25",
+      invitacion:"Enrique",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:3,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g26",
+      invitacion:"Step",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g27",
+      invitacion:"Raul Pal",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g28",
+      invitacion:"Jim",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g29",
+      invitacion:"Kike",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g30",
+      invitacion:"Nicole",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g31",
+      invitacion:"Serapio",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g32",
+      invitacion:"Sandy",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g33",
+      invitacion:"Mama Delia",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g34",
+      invitacion:"Luis S.",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g35",
+      invitacion:"Michael",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g36",
+      invitacion:"Hugo Ca",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g37",
+      invitacion:"Tio Fernando",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g38",
+      invitacion:"Diego Cano",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g39",
+      invitacion:"Gloria Ron",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g40",
+      invitacion:"Miguel Angel",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g41",
+      invitacion:"T'ia Zoila",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g42",
+      invitacion:"Miguel P",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g43",
+      invitacion:"Teresa C",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g44",
+      invitacion:"Karina",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g45",
+      invitacion:"Mama + Papa",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g46",
+      invitacion:"Denisse",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g47",
+      invitacion:"Ceecilia",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g48",
+      invitacion:"Leo",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g49",
+      invitacion:"Hitomi",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g50",
+      invitacion:"Yazzmin",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g51",
+      invitacion:"Angela Flores",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g52",
+      invitacion:"Christopher V",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g53",
+      invitacion:"Jean Marco",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g54",
+      invitacion:"Lorena P",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g55",
+      invitacion:"Rafo",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g56",
+      invitacion:"Padrinos",
+      grupo:"Novia · Fam. Mamá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g57",
+      invitacion:"MArisol",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g58",
+      invitacion:"Massi",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g59",
+      invitacion:"Efrain",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g60",
+      invitacion:"Alessa C",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g61",
+      invitacion:"Pepe V.",
+      grupo:"Novia · Fam. Papá",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g62",
+      invitacion:"Pame R.",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g63",
+      invitacion:"Patty H.",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g64",
+      invitacion:"Mauricio",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g65",
+      invitacion:"Ricardo",
+      grupo:"Novia · Amigos",
+      lado:"Novia",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g66",
+      invitacion:"Take + Thiago",
+      grupo:"Novio · Fam. Papá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g67",
+      invitacion:"Mila",
+      grupo:"Novio · Fam. Mamá",
+      lado:"Novio",
+      personas:3,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g68",
+      invitacion:"Alonso",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g69",
+      invitacion:"DK",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g70",
+      invitacion:"Ana + Germán",
+      grupo:"Novio · Fam. Papá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g71",
+      invitacion:"Rodrigo",
+      grupo:"Novio · Fam. Mamá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g72",
+      invitacion:"GC",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g73",
+      invitacion:"Juana",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g74",
+      invitacion:"Chio",
+      grupo:"Novio · Fam. Papá",
+      lado:"Novio",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g75",
+      invitacion:"Chaqui",
+      grupo:"Novio · Fam. Mamá",
+      lado:"Novio",
+      personas:4,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g76",
+      invitacion:"Diego",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g77",
+      invitacion:"Jack",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g78",
+      invitacion:"Calin",
+      grupo:"Novio · Fam. Papá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g79",
+      invitacion:"Jorge",
+      grupo:"Novio · Fam. Mamá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g80",
+      invitacion:"Jessica",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g81",
+      invitacion:"Rafa",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g82",
+      invitacion:"Hugo",
+      grupo:"Novio · Fam. Papá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g83",
+      invitacion:"Teresa",
+      grupo:"Novio · Fam. Mamá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g84",
+      invitacion:"Chevo",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g85",
+      invitacion:"Marlio",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g86",
+      invitacion:"Patty",
+      grupo:"Novio · Fam. Papá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g87",
+      invitacion:"Alfredo",
+      grupo:"Novio · Fam. Mamá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g88",
+      invitacion:"Nicole",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g89",
+      invitacion:"Hiro",
+      grupo:"Novio · Fam. Mamá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g90",
+      invitacion:"Camila",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g91",
+      invitacion:"Miguel",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g92",
+      invitacion:"Diego",
+      grupo:"Novio · Fam. Mamá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g93",
+      invitacion:"Kaori",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g94",
+      invitacion:"Bruce",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g95",
+      invitacion:"Yoshio",
+      grupo:"Novio · Fam. Mamá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g96",
+      invitacion:"Lucho",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g97",
+      invitacion:"Juan Diego",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g98",
+      invitacion:"Chochi",
+      grupo:"Novio · Fam. Mamá",
+      lado:"Novio",
+      personas:1,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g99",
+      invitacion:"Oneto",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g100",
+      invitacion:"Juan",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g101",
+      invitacion:"Pedro Hig",
+      grupo:"Novio · Fam. Mamá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g102",
+      invitacion:"Adrian",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g103",
+      invitacion:"Nina",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g104",
+      invitacion:"Emiko",
+      grupo:"Novio · Fam. Mamá",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g105",
+      invitacion:"Fasho",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g106",
+      invitacion:"Salvador",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g107",
+      invitacion:"Majo",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g108",
+      invitacion:"Santos",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g109",
+      invitacion:"Mirco",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g110",
+      invitacion:"Vega",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g111",
+      invitacion:"MAria Alejandr",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g112",
+      invitacion:"Israel",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    },
+    {
+      id:"g113",
+      invitacion:"Hide",
+      grupo:"Novio · Amigos",
+      lado:"Novio",
+      personas:2,
+      mesa:"En espera",
+      confirmacion:"En espera",
+      restricciones:"",
+      notas:""
+    }
+  ],
+  cronograma:[
+    {
+      id:"m1",
+      bloque:"Mañana",
+      hora:"08:00",
+      duracion:"3h",
+      titulo:"Peinado y maquillaje — Novia",
+      lugar:"Suite nupcial",
+      responsable:"Mata",
+      notas:""
+    },
+    {
+      id:"m2",
+      bloque:"Mañana",
+      hora:"11:00",
+      duracion:"1h 30min",
+      titulo:"Peinado y maquillaje — Damas",
+      lugar:"Suite nupcial",
+      responsable:"Mata",
+      notas:""
+    },
+    {
+      id:"t1",
+      bloque:"Tarde",
+      hora:"12:30",
+      duracion:"",
+      titulo:"Llegada de fotógrafo y video",
+      lugar:"",
+      responsable:"Frank Andonaire",
+      notas:""
+    },
+    {
+      id:"t2",
+      bloque:"Tarde",
+      hora:"13:00",
+      duracion:"1h",
+      titulo:"Sesión de fotos previa",
+      lugar:"Jardín",
+      responsable:"Frank Andonaire",
+      notas:""
+    },
+    {
+      id:"t3",
+      bloque:"Tarde",
+      hora:"15:00",
+      duracion:"30 min",
+      titulo:"Llegada de invitados",
+      lugar:"Local ANCPP",
+      responsable:"",
+      notas:"Música: DJ"
+    },
+    {
+      id:"t4",
+      bloque:"Tarde",
+      hora:"15:30",
+      duracion:"1h",
+      titulo:"Ceremonia",
+      lugar:"",
+      responsable:"",
+      notas:"Coro / grupo musical"
+    },
+    {
+      id:"n1",
+      bloque:"Noche",
+      hora:"19:00",
+      duracion:"",
+      titulo:"Recepción y cena",
+      lugar:"Local ANCPP",
+      responsable:"Mónica Tremolada",
+      notas:""
+    },
+    {
+      id:"n2",
+      bloque:"Noche",
+      hora:"21:00",
+      duracion:"",
+      titulo:"Fiesta",
+      lugar:"Pista",
+      responsable:"DJ Andrés Viches",
+      notas:""
+    },
+    {
+      id:"n3",
+      bloque:"Noche",
+      hora:"22:30",
+      duracion:"",
+      titulo:"Hora loca",
+      lugar:"Pista",
+      responsable:"",
+      notas:"Cotillón"
+    }
+  ],
+  citas:[
+    {
+      id:"a1",
+      proveedor:"Wedding Planner",
+      titulo:"Reunión de avance",
+      inicio:"2026-10-20T17:00",
+      fin:"2026-10-20T18:00",
+      estado:"Contratado",
+      notas:"(sugerida — ajustá la fecha)",
+      eventId:""
+    },
+    {
+      id:"a2",
+      proveedor:"Luna Blanco (Vestido)",
+      titulo:"Prueba de vestido",
+      inicio:"2026-10-28T11:00",
+      fin:"2026-10-28T12:30",
+      estado:"Contratado",
+      notas:"(sugerida — ajustá la fecha)",
+      eventId:""
+    },
+    {
+      id:"a3",
+      proveedor:"Mónica Tremolada (Catering)",
+      titulo:"Degustación de menú",
+      inicio:"2026-11-08T13:00",
+      fin:"2026-11-08T15:00",
+      estado:"Contratado",
+      notas:"(sugerida — ajustá la fecha)",
+      eventId:""
+    },
+    {
+      id:"a4",
+      proveedor:"Mata (Maquillaje y peinado)",
+      titulo:"Prueba de maquillaje",
+      inicio:"2026-11-22T10:00",
+      fin:"2026-11-22T11:30",
+      estado:"Contratado",
+      notas:"(sugerida — ajustá la fecha)",
+      eventId:""
+    },
+    {
+      id:"a5",
+      proveedor:"ANCPP (Local)",
+      titulo:"Visita técnica al local",
+      inicio:"2026-11-29T10:00",
+      fin:"2026-11-29T11:30",
+      estado:"Contratado",
+      notas:"(sugerida — ajustá la fecha)",
+      eventId:""
+    },
+    {
+      id:"a6",
+      proveedor:"Wedding Planner",
+      titulo:"Reunión final",
+      inicio:"2026-12-06T18:00",
+      fin:"2026-12-06T19:00",
+      estado:"Contratado",
+      notas:"(sugerida — ajustá la fecha)",
+      eventId:""
+    }
+  ]
+};
+
+/* Mock server for standalone preview */
+const MockServer = {
+  _d: JSON.parse(JSON.stringify(SAMPLE)),
+  _uid(){ return 'x'+Math.random().toString(36).slice(2,9); },
+  getBootstrap(){ return Promise.resolve(JSON.parse(JSON.stringify(this._d))); },
+  saveConfig(c){ this._d.config=Object.assign(this._d.config,c); return Promise.resolve(this._d.config); },
+  upsert(tab,obj){
+    const arr=this._d[tab];
+    if(obj.id){ const i=arr.findIndex(x=>x.id===obj.id); if(i>=0){arr[i]=obj;return Promise.resolve(obj);} }
+    obj.id=this._uid(); arr.push(obj); return Promise.resolve(obj);
+  },
+  remove(tab,id){ this._d[tab]=this._d[tab].filter(x=>x.id!==id); return Promise.resolve(true); },
+  syncCita(id){ const c=this._d.citas.find(x=>x.id===id); if(c) c.eventId='mock-'+id; return Promise.resolve(c); }
+};
+
+/* =========================================================================
+   STATE + HELPERS
+   ========================================================================= */
+let DB = null;
+let CURRENT = 'inicio';
+const $ = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function money(n){
+  const cur = DB && DB.config.moneda || 'PEN';
+  try{ return new Intl.NumberFormat('es-PE',{style:'currency',currency:cur,maximumFractionDigits:0}).format(+n||0); }
+  catch(e){ return 'S/ '+Math.round(+n||0).toLocaleString('es-PE'); }
+}
+function num(n){ return (+n||0).toLocaleString('es-PE'); }
+function daysTo(dateStr){
+  if(!dateStr) return null;
+  const d=new Date(dateStr+'T00:00:00'), t=new Date(); t.setHours(0,0,0,0);
+  return Math.round((d-t)/86400000);
+}
+function fmtDateLong(dateStr){
+  if(!dateStr) return '—';
+  const d=new Date(dateStr+'T00:00:00');
+  return d.toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+function setSaving(s){ $('#saveStatus').textContent = s ? 'Guardando…' : 'Todo guardado'; }
+
+/* =========================================================================
+   BOOT
+   ========================================================================= */
+async function boot(){
+  DB = await server('getBootstrap');
+  const names = DB.config.pareja || 'Nuestra Boda';
+  $('#brandNames').textContent = names;
+  $('#brandMono').textContent = names.split('&').map(s=>s.trim()[0]).filter(Boolean).slice(0,2).join('') || 'B';
+  $('#loading').style.display='none';
+  $('#app').style.display='flex';
+  $$('#nav a').forEach(a=>a.addEventListener('click',()=>go(a.dataset.view)));
+  render();
+}
+function go(view){
+  CURRENT=view;
+  $$('#nav a').forEach(a=>a.classList.toggle('active',a.dataset.view===view));
+  render();
+  window.scrollTo(0,0);
+}
+function render(){ ({inicio:vInicio,presupuesto:vPresupuesto,proveedores:vProveedores,invitados:vInvitados,cronograma:vCronograma,citas:vCitas}[CURRENT]||vInicio)(); }
+
+/* =========================================================================
+   DERIVED METRICS
+   ========================================================================= */
+function metrics(){
+  const total = +DB.config.presupuestoTotal||0;
+  const estimado = DB.presupuesto.reduce((s,x)=>s+(+x.estimado||0),0);
+  const cotizado = DB.proveedores.reduce((s,x)=>s+(+x.cotizado||0),0);
+  const pagado = DB.proveedores.reduce((s,x)=>s+(+x.pagado||0),0);
+  const personas = DB.invitados.reduce((s,x)=>s+(+x.personas||0),0);
+  const confirmadas = DB.invitados.filter(x=>/confirm/i.test(x.confirmacion)).reduce((s,x)=>s+(+x.personas||0),0);
+  const invitaciones = DB.invitados.length;
+  const contratados = DB.proveedores.filter(x=>/contratado|pagado/i.test(x.estado)).length;
+  return {total,estimado,cotizado,pagado,personas,confirmadas,invitaciones,contratados,
+    pctPagado: cotizado? Math.round(pagado/cotizado*100):0,
+    pctConfirm: personas? Math.round(confirmadas/personas*100):0,
+    planN: +DB.config.invitadosPlan||0,
+    porInvitado: (personas|| (+DB.config.invitadosPlan||0))? Math.round(total/(personas||(+DB.config.invitadosPlan||0))):0};
+}
+function catCotizado(cat){ return DB.proveedores.filter(v=>v.categoria===cat).reduce((s,v)=>s+(+v.cotizado||0),0); }
+function catPagado(cat){ return DB.proveedores.filter(v=>v.categoria===cat).reduce((s,v)=>s+(+v.pagado||0),0); }
+
+/* =========================================================================
+   VIEW · INICIO
+   ========================================================================= */
+function vInicio(){
+  const m=metrics(); const d=daysTo(DB.config.fecha);
+  const progress = Math.round(([DB.presupuesto.length>0,DB.proveedores.length>0,DB.invitados.length>0,DB.cronograma.length>0,DB.citas.length>0].filter(Boolean).length/5)*100);
+  $('#content').innerHTML = `
+    <div class="hero">
+      <div class="days">${d==null?'—':(d<0?'¡Ya fue!':d)}<small>${d==null?'define la fecha':'días para tu boda'}</small></div>
+      <div class="sep"></div>
+      <div class="info">
+        <b>${esc(fmtDateLong(DB.config.fecha))}</b>
+        <span>📍 ${esc(DB.config.lugar||'—')}</span>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn gold" onclick="editConfig()">✎ Editar datos</button>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <b style="font-family:'Playfair Display',serif;font-size:18px">Progreso de tu boda</b>
+        <span style="color:var(--gold-deep);font-weight:600">${progress}%</span>
+      </div>
+      <div class="bar"><span style="width:${progress}%"></span></div>
+      <div class="legend">
+        ${chk(DB.presupuesto.length,'Presupuesto')} ${chk(DB.proveedores.length,'Proveedores')}
+        ${chk(DB.invitados.length,'Invitados')} ${chk(DB.cronograma.length,'Cronograma')}
+        ${chk(DB.citas.length,'Citas')}
+      </div>
+    </div>
+
+    <div class="grid g4" style="margin-bottom:8px">
+      ${kpi('Presupuesto total',money(m.total),'100% asignado','accent')}
+      ${kpi('Total cotizado',money(m.cotizado), m.cotizado>m.total?`▲ ${money(m.cotizado-m.total)} sobre estimado`:`${money(m.total-m.cotizado)} de margen`, m.cotizado>m.total?'dg':'')}
+      ${kpi('Pagado',money(m.pagado),m.pctPagado+'% de lo cotizado','ok')}
+      ${m.personas? kpi('Invitados confirmados',m.confirmadas+' / '+m.personas,m.pctConfirm+'% confirmado') : kpi('Invitados (meta)',m.planN,'cargá tu lista para el detalle')}
+    </div>
+
+    <div class="section-title"><h2>Tus herramientas</h2><span class="hint">Entrá directo a lo que necesites resolver</span></div>
+    <div class="tiles">
+      ${tile('💰','Presupuesto','Categorías, pagos y control del total.','presupuesto')}
+      ${tile('🏛️','Proveedores','Propuestas, contactos y decisiones.','proveedores')}
+      ${tile('👥','Invitados','Lista, etiquetas y distribución.','invitados')}
+      ${tile('⏰','Cronograma','Secuencia y responsables del gran día.','cronograma')}
+      ${tile('📅','Citas & Gantt','Fechas de atención sincronizadas a tu calendar.','citas')}
+      ${tile('🎵','Música','Repertorio de ceremonia y fiesta.','cronograma')}
+      ${tile('🍰','Detalles','Torta, papelería y transporte.','proveedores')}
+      ${tile('📖','Resumen','Vista general de toda tu boda.','inicio')}
+    </div>
+
+    ${alertsBlock(m)}
+  `;
+}
+function chk(ok,label){ return `<span class="pill-inline">${ok?'✓':'○'} <b>${label}</b></span>`; }
+function kpi(lbl,val,sub,cls=''){ return `<div class="kpi ${cls.includes('accent')?'accent':''}"><div class="lbl">${lbl}</div><div class="val ${cls.replace('accent','')}">${val}</div><div class="sub">${sub}</div></div>`; }
+function tile(ic,title,desc,view){ return `<div class="tile" onclick="go('${view}')"><div class="ic">${ic}</div><b>${title}</b><span>${desc}</span></div>`; }
+function alertsBlock(m){
+  const over = DB.presupuesto.filter(p=>catCotizado(p.categoria) > (+p.estimado||0) && catCotizado(p.categoria)>0);
+  const sinProv = DB.presupuesto.filter(p=>(+p.estimado||0)>0 && catCotizado(p.categoria)===0);
+  let h='';
+  if(m.cotizado>m.total) h+=`<div class="alert red"><span class="ic">●</span><div>Lo cotizado supera tu presupuesto total en <b>${money(m.cotizado-m.total)}</b>. Revisá proveedores o ajustá el tope.</div></div>`;
+  if(over.length) h+=`<div class="alert red"><span class="ic">●</span><div>${over.length} categoría(s) sobrepasan lo estimado: ${over.map(p=>esc(p.categoria)).join(', ')}.</div></div>`;
+  if(sinProv.length) h+=`<div class="alert warn"><span class="ic">▲</span><div>${sinProv.length} categoría(s) con presupuesto sin proveedores cotizados: ${sinProv.map(p=>esc(p.categoria)).join(', ')}.</div></div>`;
+  return h ? `<div class="section-title"><h2>Alertas</h2></div>${h}` : '';
+}
+
+/* =========================================================================
+   VIEW · PRESUPUESTO
+   ========================================================================= */
+function vPresupuesto(){
+  const m=metrics();
+  const pctAsignado = m.total? Math.round(m.estimado/m.total*100):0;
+  const rows = DB.presupuesto.map(p=>{
+    const cot=catCotizado(p.categoria), pag=catPagado(p.categoria), est=+p.estimado||0;
+    const over = cot>est && cot>0;
+    return `<tr>
+      <td class="t-name">${esc(p.categoria)}${p.notas?`<div class="t-sub">${esc(p.notas)}</div>`:''}</td>
+      <td class="num">${money(est)}</td>
+      <td class="num ${over?'':''}" style="${over?'color:var(--danger);font-weight:500':''}">${money(cot)} ${over?'▲':''}</td>
+      <td class="num">${money(pag)}</td>
+      <td style="min-width:120px"><div class="bar thin"><span style="width:${est?Math.min(100,Math.round(pag/est*100)):0}%"></span></div></td>
+      <td><div class="row-actions">
+        <button class="icon-btn" onclick="editPresupuesto('${p.id}')">✎</button>
+        <button class="icon-btn del" onclick="del('presupuesto','${p.id}')">🗑</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  $('#content').innerHTML=`
+    <div class="banner">
+      <div class="kick">Módulo · Planning</div>
+      <h1>💰 Presupuesto</h1>
+      <p>Definí cuánto podés gastar y controlá cotizado vs. pagado por categoría. Todo se conecta con tus proveedores.</p>
+      <div class="actions">
+        <button class="btn ghost" onclick="editConfig()">Editar tope</button>
+        <button class="btn gold" onclick="editPresupuesto()">+ Categoría</button>
+      </div>
+    </div>
+
+    <div class="grid g4" style="margin-bottom:18px">
+      ${kpi('Presupuesto total',money(m.total),pctAsignado+'% asignado','accent')}
+      ${kpi('Lo que estimé',money(m.estimado),'suma de categorías')}
+      ${kpi('Lo que coticé',money(m.cotizado),m.cotizado>m.total?`▲ ${money(m.cotizado-m.total)} más`:'dentro del tope',m.cotizado>m.total?'dg':'ok')}
+      ${kpi('Lo que pagué',money(m.pagado),m.pctPagado+'% de lo cotizado','ok')}
+    </div>
+
+    <div class="card" style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin-bottom:7px">
+        <span>Pagado ${m.pctPagado}%</span><span>Cotizado ${m.total?Math.round(m.cotizado/m.total*100):0}% del tope</span>
+      </div>
+      <div class="bar"><span style="width:${m.cotizado?Math.round(m.pagado/m.cotizado*100):0}%"></span></div>
+      <div class="alert ${m.cotizado>m.total?'red':'warn'}" style="margin-top:14px">
+        <span class="ic">${m.cotizado>m.total?'●':'▲'}</span>
+        <div>${m.cotizado>m.total? `Exceso total: <b>${money(m.cotizado-m.total)}</b> por encima del estimado.` : `Te quedan <b>${money(m.total-m.cotizado)}</b> de margen · <b>${money(m.porInvitado)}</b> por invitado.`}</div>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Categoría</th><th class="num">Estimado</th><th class="num">Cotizado</th><th class="num">Pagado</th><th>Avance pago</th><th></th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="6" class="empty">Sin categorías todavía.</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+
+/* =========================================================================
+   VIEW · PROVEEDORES
+   ========================================================================= */
+let provFilter={q:'',cat:'',estado:''};
+function vProveedores(){
+  const m=metrics();
+  const cats=[...new Set(DB.presupuesto.map(p=>p.categoria).concat(DB.proveedores.map(v=>v.categoria)))].filter(Boolean);
+  const list=DB.proveedores.filter(v=>{
+    if(provFilter.q && !(v.nombre+v.notas+v.contacto).toLowerCase().includes(provFilter.q.toLowerCase())) return false;
+    if(provFilter.cat && v.categoria!==provFilter.cat) return false;
+    if(provFilter.estado && v.estado!==provFilter.estado) return false;
+    return true;
+  });
+  const rows=list.map(v=>`
+    <div class="card" style="display:flex;gap:14px;align-items:flex-start;margin-bottom:12px">
+      <div style="width:40px;height:40px;border-radius:10px;background:var(--card-2);display:grid;place-items:center;font-size:18px">${iconCat(v.categoria)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <b style="font-family:'Playfair Display',serif;font-size:18px">${esc(v.nombre)}</b>
+          ${estadoBadge(v.estado)}
+        </div>
+        <div class="t-sub" style="text-transform:uppercase;letter-spacing:.1em;font-size:10.5px;margin:2px 0 6px">${esc(v.categoria||'—')}</div>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;font-size:13px;color:var(--muted)">
+          <span>📞 ${esc(v.contacto||'—')}</span>
+          <span>Cotizado <b style="color:var(--ink)">${money(v.cotizado)}</b></span>
+          <span>Pagado <b style="color:var(--ink)">${money(v.pagado)}</b></span>
+        </div>
+        ${v.notas?`<div class="t-sub" style="margin-top:6px;font-style:italic">${esc(v.notas)}</div>`:''}
+      </div>
+      <div class="row-actions" style="opacity:1">
+        <button class="icon-btn" onclick="editProveedor('${v.id}')">✎</button>
+        <button class="icon-btn del" onclick="del('proveedores','${v.id}')">🗑</button>
+      </div>
+    </div>`).join('');
+  $('#content').innerHTML=`
+    <div class="banner">
+      <div class="kick">Módulo · Planning</div>
+      <h1>🏛️ Proveedores</h1>
+      <p>Cada proveedor con lo que cotizó y lo que ya pagaste, conectado a tu presupuesto y a tus citas.</p>
+      <div class="actions"><button class="btn gold" onclick="editProveedor()">+ Agregar</button></div>
+    </div>
+    <div class="grid g3" style="margin-bottom:14px">
+      ${kpi('Proveedores',DB.proveedores.length,m.contratados+' contratados/pagados')}
+      ${kpi('Total cotizado',money(m.cotizado),'moneda '+DB.config.moneda)}
+      ${kpi('Total pagado',money(m.pagado),m.pctPagado+'% de lo cotizado','ok')}
+    </div>
+    <div class="toolbar">
+      <input class="search" placeholder="🔍 Buscar por nombre o nota…" value="${esc(provFilter.q)}" oninput="provFilter.q=this.value;renderList()">
+      <select onchange="provFilter.cat=this.value;vProveedores()"><option value="">Todas las categorías</option>${cats.map(c=>`<option ${provFilter.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
+      <select onchange="provFilter.estado=this.value;vProveedores()"><option value="">Todos los estados</option>${['Cotizado','Contratado','Pagado'].map(s=>`<option ${provFilter.estado===s?'selected':''}>${s}</option>`).join('')}</select>
+    </div>
+    <div id="provList">${rows||'<div class="empty">Sin proveedores que coincidan.</div>'}</div>`;
+}
+function renderList(){ $('#provList') && (()=>{ const q=provFilter.q; const list=DB.proveedores.filter(v=>(v.nombre+v.notas+v.contacto).toLowerCase().includes(q.toLowerCase())&&(!provFilter.cat||v.categoria===provFilter.cat)&&(!provFilter.estado||v.estado===provFilter.estado)); vProveedores(); })(); }
+function iconCat(c){ c=(c||'').toLowerCase(); if(/salón|venue|hacienda/.test(c))return'🏛️'; if(/cater|bebida|banquet/.test(c))return'🍽️'; if(/música|violín|dj|entreten/.test(c))return'🎵'; if(/foto/.test(c))return'📷'; if(/video|cine/.test(c))return'🎬'; if(/flor|decor/.test(c))return'🌿'; if(/vestu/.test(c))return'👗'; if(/torta/.test(c))return'🍰'; if(/papel|invita/.test(c))return'✉️'; if(/transp/.test(c))return'🚗'; return'🏷️'; }
+function estadoBadge(e){ e=e||''; const c=/pagado/i.test(e)?'green':/contratado/i.test(e)?'gold':'gray'; return `<span class="badge ${c}">${esc(e||'—')}</span>`; }
+
+/* =========================================================================
+   VIEW · INVITADOS
+   ========================================================================= */
+let invFilter={q:'',conf:'',lado:''};
+function vInvitados(){
+  const m=metrics();
+  const rest=DB.invitados.filter(g=>g.restricciones&&g.restricciones.trim());
+  const list=DB.invitados.filter(g=>{
+    if(invFilter.q && !(g.invitacion+g.grupo+g.mesa).toLowerCase().includes(invFilter.q.toLowerCase())) return false;
+    if(invFilter.conf && !new RegExp(invFilter.conf,'i').test(g.confirmacion)) return false;
+    if(invFilter.lado && g.lado!==invFilter.lado) return false;
+    return true;
+  });
+  const rows=list.map(g=>`<tr>
+    <td>
+      <div class="t-name">${esc(g.invitacion)}</div>
+      <div class="t-sub">${esc(g.grupo||'')}${g.restricciones?` · <span style="color:var(--warn)">⚠ ${esc(g.restricciones)}</span>`:''}</div>
+    </td>
+    <td class="num">${num(g.personas)}</td>
+    <td>${esc(g.mesa||'En espera')}</td>
+    <td>${confBadge(g.confirmacion)}</td>
+    <td><div class="row-actions">
+      <button class="icon-btn" onclick="editInvitado('${g.id}')">✎</button>
+      <button class="icon-btn del" onclick="del('invitados','${g.id}')">🗑</button>
+    </div></td>
+  </tr>`).join('');
+  $('#content').innerHTML=`
+    <div class="banner">
+      <div class="kick">Módulo · Planning</div>
+      <h1>👥 Invitados</h1>
+      <p>Cargá a todos, definí quién va con quién por mesa y anotá sus intolerancias. Todo en un lugar.</p>
+      <div class="actions"><button class="btn gold" onclick="editInvitado()">+ Agregar</button></div>
+    </div>
+    <div class="grid g4" style="margin-bottom:14px">
+      ${kpi('Invitaciones',DB.invitados.length,'grupos cargados')}
+      ${kpi('Personas',m.personas,'total')}
+      ${kpi('Confirmados',m.confirmadas,m.pctConfirm+'% confirmado','ok')}
+      ${kpi('Pendientes',m.personas-m.confirmadas,'por responder')}
+    </div>
+    ${rest.length?`<div class="alert warn"><span class="ic">⚠</span><div>${rest.length} invitado(s) con restricciones alimentarias: ${rest.map(g=>esc(g.invitacion)+' ('+esc(g.restricciones)+')').join(' · ')}.</div></div>`:''}
+    <div class="toolbar">
+      <input class="search" placeholder="🔍 Buscar por nombre, grupo o mesa…" value="${esc(invFilter.q)}" oninput="invFilter.q=this.value;vInvitados()">
+      <select onchange="invFilter.conf=this.value;vInvitados()"><option value="">Toda confirmación</option><option ${invFilter.conf==='confirm'?'selected':''} value="confirm">Confirmado</option><option ${invFilter.conf==='espera'?'selected':''} value="espera">En espera</option></select>
+      <select onchange="invFilter.lado=this.value;vInvitados()"><option value="">Ambos lados</option><option ${invFilter.lado==='Novia'?'selected':''}>Novia</option><option ${invFilter.lado==='Novio'?'selected':''}>Novio</option></select>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Invitación</th><th class="num">Personas</th><th>Mesa</th><th>Confirmación</th><th></th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="5" class="empty">Sin invitados que coincidan.</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+function confBadge(c){ c=c||''; return `<span class="badge ${/confirm/i.test(c)?'green':'gray'}">${esc(c||'En espera')}</span>`; }
+
+/* =========================================================================
+   VIEW · CRONOGRAMA
+   ========================================================================= */
+function vCronograma(){
+  const blocks=['Mañana','Tarde','Noche'];
+  const byBlock={}; blocks.forEach(b=>byBlock[b]=[]);
+  DB.cronograma.slice().sort((a,b)=>(a.hora||'').localeCompare(b.hora||'')).forEach(c=>{ (byBlock[c.bloque]||(byBlock[c.bloque]=[])).push(c); });
+  let body='';
+  blocks.forEach(b=>{
+    if(!byBlock[b].length) return;
+    body+=`<div class="tl-block"><span>${b==='Mañana'?'🌅':b==='Tarde'?'☀️':'🌙'} ${b}</span><div class="ln"></div></div>`;
+    byBlock[b].forEach(c=>{
+      body+=`<div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="time"><b>${esc(c.hora||'')}</b><span>${esc(c.duracion||'')}</span></div>
+        <div class="body">
+          <h4>${esc(c.titulo)}</h4>
+          <div class="meta">${c.lugar?`<span>📍 ${esc(c.lugar)}</span>`:''}${c.responsable?`<span>👤 ${esc(c.responsable)}</span>`:''}${c.notas?`<span>🎵 ${esc(c.notas)}</span>`:''}</div>
+        </div>
+        <div class="row-actions" style="opacity:1">
+          <button class="icon-btn" onclick="editCrono('${c.id}')">✎</button>
+          <button class="icon-btn del" onclick="del('cronograma','${c.id}')">🗑</button>
+        </div>
+      </div>`;
+    });
+  });
+  $('#content').innerHTML=`
+    <div class="banner">
+      <div class="kick">Módulo · Planning</div>
+      <h1>⏰ Cronograma del día</h1>
+      <p>${esc(fmtDateLong(DB.config.fecha))}</p>
+      <div class="actions"><button class="btn gold" onclick="editCrono()">+ Evento</button></div>
+    </div>
+    ${body||'<div class="empty">Todavía no cargaste eventos del día.</div>'}`;
+}
+
+/* =========================================================================
+   VIEW · CITAS + GANTT
+   ========================================================================= */
+function vCitas(){
+  const citas=DB.citas.slice().filter(c=>c.inicio).sort((a,b)=>a.inicio.localeCompare(b.inicio));
+  $('#content').innerHTML=`
+    <div class="banner">
+      <div class="kick">Módulo · Agenda</div>
+      <h1>📅 Citas &amp; Gantt</h1>
+      <p>Programá reuniones, degustaciones y pruebas con proveedores. Sincronizá cada cita con tu Google Calendar.</p>
+      <div class="actions">
+        <button class="btn ghost" onclick="syncAll()">⟳ Sincronizar todo</button>
+        <button class="btn gold" onclick="editCita()">+ Cita</button>
+      </div>
+    </div>
+    ${ganttHTML(citas)}
+    <div class="section-title"><h2>Detalle de citas</h2><span class="hint">${IN_GAS?'Se crean/actualizan eventos en tu calendario':'Vista previa: la sincronización real corre dentro de Google'}</span></div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Proveedor / Cita</th><th>Inicio</th><th>Estado</th><th>Calendar</th><th></th></tr></thead>
+        <tbody>${citas.map(c=>`<tr>
+          <td><div class="t-name">${esc(c.proveedor||'—')}</div><div class="t-sub">${esc(c.titulo||'')}${c.notas?` · ${esc(c.notas)}`:''}</div></td>
+          <td>${fmtDateTime(c.inicio)}</td>
+          <td>${estadoBadge(c.estado)}</td>
+          <td>${c.eventId?'<span class="badge green">✓ En calendar</span>':'<button class="btn line sm" onclick="syncOne(\''+c.id+'\')">⟳ Sincronizar</button>'}</td>
+          <td><div class="row-actions">
+            <button class="icon-btn" onclick="editCita('${c.id}')">✎</button>
+            <button class="icon-btn del" onclick="del('citas','${c.id}')">🗑</button>
+          </div></td>
+        </tr>`).join('')||'<tr><td colspan="5" class="empty">Sin citas programadas.</td></tr>'}</tbody>
+      </table>
+    </div>`;
+}
+function fmtDateTime(s){ if(!s)return'—'; const d=new Date(s); return d.toLocaleDateString('es-PE',{day:'2-digit',month:'short'})+' · '+d.toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}); }
+function ganttHTML(citas){
+  if(!citas.length) return '<div class="gantt"><div class="empty">Agregá citas para ver el diagrama de Gantt.</div></div>';
+  const dates=citas.flatMap(c=>[new Date(c.inicio),new Date(c.fin||c.inicio)]);
+  let min=new Date(Math.min(...dates)), max=new Date(Math.max(...dates.map(d=>+d)));
+  min.setDate(1); min.setHours(0,0,0,0);
+  max=new Date(max.getFullYear(),max.getMonth()+1,0,23,59); // end of last month
+  const span=+max-+min || 1;
+  // month columns
+  const months=[]; let cur=new Date(min);
+  while(cur<=max){ months.push(new Date(cur)); cur=new Date(cur.getFullYear(),cur.getMonth()+1,1); }
+  const labelW=180;
+  const monthsHead=`<div class="gantt-months" style="margin-left:${labelW}px">${months.map(mo=>`<div>${mo.toLocaleDateString('es-PE',{month:'short',year:'2-digit'})}</div>`).join('')}</div>`;
+  const today=new Date();
+  const todayPct=(today>=min&&today<=max)? ((+today-+min)/span*100):null;
+  const rows=citas.map(c=>{
+    const s=new Date(c.inicio), e=new Date(c.fin||c.inicio);
+    let left=(+s-+min)/span*100; let w=Math.max(2.5,(+e-+s)/span*100);
+    if(left+w>100)w=100-left;
+    const cls=/pagado/i.test(c.estado)?'pagado':/contratado/i.test(c.estado)?'contratado':'cotizado';
+    return `<div class="gantt-row">
+      <div class="gantt-label" style="width:${labelW}px"><b>${esc(c.proveedor||c.titulo)}</b><span>${esc(c.titulo||'')}</span></div>
+      <div class="gantt-track">
+        <div class="gbar ${cls}" style="left:${left}%;width:${w}%" onclick="editCita('${c.id}')" title="${esc(c.titulo)} — ${fmtDateTime(c.inicio)}">${new Date(c.inicio).toLocaleDateString('es-PE',{day:'numeric',month:'short'})}</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="gantt">
+    ${monthsHead}
+    <div style="position:relative">
+      ${todayPct!=null?`<div class="gantt-today" style="left:calc(${labelW}px + (100% - ${labelW}px) * ${todayPct/100})"><b>hoy</b></div>`:''}
+      ${rows}
+    </div>
+    <div class="legend" style="padding:12px 16px 0">
+      <span class="pill-inline"><span style="width:12px;height:12px;border-radius:3px;background:#a89373;display:inline-block"></span> Cotizado</span>
+      <span class="pill-inline"><span style="width:12px;height:12px;border-radius:3px;background:#5f4535;display:inline-block"></span> Contratado</span>
+      <span class="pill-inline"><span style="width:12px;height:12px;border-radius:3px;background:var(--gold);display:inline-block"></span> Pagado</span>
+    </div>
+  </div>`;
+}
+
+/* =========================================================================
+   MODALS / CRUD
+   ========================================================================= */
+let modalCtx=null;
+function openModal(kick,title,fields,onSave){
+  $('#modalKick').textContent=kick; $('#modalTitle').textContent=title;
+  $('#modalBody').innerHTML=fields.map(f=>{
+    const val=f.value==null?'':f.value;
+    if(f.type==='select') return fieldWrap(f,`<select id="f_${f.k}">${f.options.map(o=>`<option ${String(o)===String(val)?'selected':''}>${esc(o)}</option>`).join('')}</select>`);
+    if(f.type==='textarea') return fieldWrap(f,`<textarea id="f_${f.k}">${esc(val)}</textarea>`);
+    return fieldWrap(f,`<input id="f_${f.k}" type="${f.type||'text'}" value="${esc(val)}">`);
+  }).join('');
+  modalCtx=onSave;
+  $('#overlay').classList.add('open');
+}
+function fieldWrap(f,inner){ return `<div class="field" ${f.half?'style="display:inline-block;width:calc(50% - 6px)"':''}><label>${esc(f.label)}</label>${inner}</div>`; }
+function closeModal(){ $('#overlay').classList.remove('open'); modalCtx=null; }
+$('#modalSave').addEventListener('click',()=>{ if(modalCtx) modalCtx(); });
+$('#overlay').addEventListener('click',e=>{ if(e.target.id==='overlay') closeModal(); });
+function getF(k){ const el=$('#f_'+k); return el?el.value:''; }
+
+async function persist(tab,obj,after){
+  setSaving(true);
+  try{
+    const saved=await server('upsert',tab,obj);
+    const arr=DB[tab]; const i=arr.findIndex(x=>x.id===saved.id);
+    if(i>=0)arr[i]=saved; else arr.push(saved);
+    closeModal(); render(); toast('Guardado ✓');
+    if(after)after(saved);
+  }catch(e){ toast('Error al guardar'); console.error(e); }
+  setSaving(false);
+}
+async function del(tab,id){
+  if(!confirm('¿Eliminar este registro?')) return;
+  setSaving(true);
+  try{ await server('remove',tab,id); DB[tab]=DB[tab].filter(x=>x.id!==id); render(); toast('Eliminado'); }
+  catch(e){ toast('Error'); } setSaving(false);
+}
+
+/* Config */
+function editConfig(){
+  const c=DB.config;
+  openModal('Datos de la boda','Editar información',[
+    {k:'pareja',label:'Nombres de la pareja',value:c.pareja},
+    {k:'fecha',label:'Fecha',type:'date',value:c.fecha,half:true},
+    {k:'moneda',label:'Moneda',type:'select',options:['PEN','USD','PYG','EUR'],value:c.moneda,half:true},
+    {k:'lugar',label:'Lugar',value:c.lugar},
+    {k:'presupuestoTotal',label:'Presupuesto total',type:'number',value:c.presupuestoTotal}
+  ],async()=>{
+    const obj={pareja:getF('pareja'),fecha:getF('fecha'),moneda:getF('moneda'),lugar:getF('lugar'),presupuestoTotal:+getF('presupuestoTotal')||0};
+    setSaving(true);
+    try{ DB.config=await server('saveConfig',obj);
+      $('#brandNames').textContent=DB.config.pareja;
+      $('#brandMono').textContent=(DB.config.pareja||'B').split('&').map(s=>s.trim()[0]).filter(Boolean).slice(0,2).join('');
+      closeModal(); render(); toast('Guardado ✓'); }
+    catch(e){ toast('Error'); } setSaving(false);
+  });
+}
+/* Presupuesto */
+function editPresupuesto(id){
+  const p=id?DB.presupuesto.find(x=>x.id===id):{categoria:'',estimado:'',notas:''};
+  openModal('Categoría',id?'Editar categoría':'Nueva categoría',[
+    {k:'categoria',label:'Categoría',value:p.categoria},
+    {k:'estimado',label:'Monto estimado',type:'number',value:p.estimado},
+    {k:'notas',label:'Notas',type:'textarea',value:p.notas}
+  ],()=>persist('presupuesto',{id:p.id,categoria:getF('categoria'),estimado:+getF('estimado')||0,notas:getF('notas')}));
+}
+/* Proveedor */
+function editProveedor(id){
+  const v=id?DB.proveedores.find(x=>x.id===id):{nombre:'',categoria:'',estado:'Cotizado',contacto:'',cotizado:'',pagado:'',notas:''};
+  const cats=[...new Set(DB.presupuesto.map(p=>p.categoria))].filter(Boolean);
+  openModal('Proveedor',id?'Editar proveedor':'Nuevo proveedor',[
+    {k:'nombre',label:'Nombre',value:v.nombre},
+    {k:'categoria',label:'Categoría',type:'select',options:cats.length?cats:['Salón / Venue','Catering y bebidas','Música y entretenimiento','Fotografía','Flores y decoración','Otros'],value:v.categoria,half:true},
+    {k:'estado',label:'Estado',type:'select',options:['Cotizado','Contratado','Pagado'],value:v.estado,half:true},
+    {k:'contacto',label:'Contacto (teléfono o email)',value:v.contacto},
+    {k:'cotizado',label:'Cotizado',type:'number',value:v.cotizado,half:true},
+    {k:'pagado',label:'Pagado',type:'number',value:v.pagado,half:true},
+    {k:'notas',label:'Notas',type:'textarea',value:v.notas}
+  ],()=>persist('proveedores',{id:v.id,nombre:getF('nombre'),categoria:getF('categoria'),estado:getF('estado'),contacto:getF('contacto'),cotizado:+getF('cotizado')||0,pagado:+getF('pagado')||0,notas:getF('notas')}));
+}
+/* Invitado */
+function editInvitado(id){
+  const g=id?DB.invitados.find(x=>x.id===id):{invitacion:'',grupo:'',lado:'Novia',personas:1,mesa:'En espera',confirmacion:'En espera',restricciones:'',notas:''};
+  openModal('Invitación',id?'Editar invitación':'Nueva invitación',[
+    {k:'invitacion',label:'Nombre / familia',value:g.invitacion},
+    {k:'grupo',label:'Grupo (ej. Novia · Familia)',value:g.grupo,half:true},
+    {k:'lado',label:'Lado',type:'select',options:['Novia','Novio','Ambos'],value:g.lado,half:true},
+    {k:'personas',label:'Personas',type:'number',value:g.personas,half:true},
+    {k:'mesa',label:'Mesa',value:g.mesa,half:true},
+    {k:'confirmacion',label:'Confirmación',type:'select',options:['En espera','Confirmado','No asiste'],value:g.confirmacion,half:true},
+    {k:'restricciones',label:'Restricciones alimentarias',value:g.restricciones,half:true},
+    {k:'notas',label:'Notas',type:'textarea',value:g.notas}
+  ],()=>persist('invitados',{id:g.id,invitacion:getF('invitacion'),grupo:getF('grupo'),lado:getF('lado'),personas:+getF('personas')||1,mesa:getF('mesa'),confirmacion:getF('confirmacion'),restricciones:getF('restricciones'),notas:getF('notas')}));
+}
+/* Cronograma */
+function editCrono(id){
+  const c=id?DB.cronograma.find(x=>x.id===id):{bloque:'Tarde',hora:'',duracion:'',titulo:'',lugar:'',responsable:'',notas:''};
+  openModal('Evento del día',id?'Editar evento':'Nuevo evento',[
+    {k:'hora',label:'Hora',value:c.hora,half:true},
+    {k:'bloque',label:'Bloque',type:'select',options:['Mañana','Tarde','Noche'],value:c.bloque,half:true},
+    {k:'titulo',label:'Título',value:c.titulo},
+    {k:'duracion',label:'Duración',value:c.duracion,half:true},
+    {k:'lugar',label:'Lugar',value:c.lugar,half:true},
+    {k:'responsable',label:'Responsable / proveedor',value:c.responsable},
+    {k:'notas',label:'Notas (música, detalles)',type:'textarea',value:c.notas}
+  ],()=>persist('cronograma',{id:c.id,hora:getF('hora'),bloque:getF('bloque'),titulo:getF('titulo'),duracion:getF('duracion'),lugar:getF('lugar'),responsable:getF('responsable'),notas:getF('notas')}));
+}
+/* Cita */
+function editCita(id){
+  const a=id?DB.citas.find(x=>x.id===id):{proveedor:'',titulo:'',inicio:'',fin:'',estado:'Cotizado',notas:'',eventId:''};
+  const provs=[...new Set(DB.proveedores.map(v=>v.nombre))].filter(Boolean);
+  openModal('Cita con proveedor',id?'Editar cita':'Nueva cita',[
+    {k:'proveedor',label:'Proveedor',type:provs.length?'select':'text',options:provs,value:a.proveedor},
+    {k:'titulo',label:'Título de la cita',value:a.titulo},
+    {k:'inicio',label:'Inicio',type:'datetime-local',value:a.inicio,half:true},
+    {k:'fin',label:'Fin',type:'datetime-local',value:a.fin,half:true},
+    {k:'estado',label:'Estado',type:'select',options:['Cotizado','Contratado','Pagado'],value:a.estado},
+    {k:'notas',label:'Notas',type:'textarea',value:a.notas}
+  ],()=>{
+    const obj={id:a.id,proveedor:getF('proveedor'),titulo:getF('titulo'),inicio:getF('inicio'),fin:getF('fin')||getF('inicio'),estado:getF('estado'),notas:getF('notas'),eventId:a.eventId||''};
+    persist('citas',obj);
+  });
+}
+async function syncOne(id){
+  if(!IN_GAS){ const c=DB.citas.find(x=>x.id===id); c.eventId='preview'; render(); toast('Vista previa: se sincronizaría en Google'); return; }
+  setSaving(true); toast('Sincronizando con Calendar…');
+  try{ const c=await server('syncCita',id); const i=DB.citas.findIndex(x=>x.id===id); DB.citas[i]=c; render(); toast('Agregado a Google Calendar ✓'); }
+  catch(e){ toast('Error al sincronizar'); console.error(e); } setSaving(false);
+}
+async function syncAll(){ for(const c of DB.citas){ if(!c.eventId) await syncOne(c.id); } }
+
+/* go */
+window.go=go; window.editConfig=editConfig;
+
+boot();
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# temporales de trabajo
+_*.xlsx
+_*.js
+*.tmp
+seed_data.json
+# imágenes renderizadas / capturas
+mb_*.png
+*.png
+# sistema
+.DS_Store
+Thumbs.db
+node_modules/
