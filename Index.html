@@ -280,11 +280,22 @@ tr:hover .row-actions{opacity:1}
 
 <script>
 /* =========================================================================
-   DATA LAYER  ·  works in two modes:
-   - Inside Apps Script  -> uses google.script.run (real Sheets + Calendar)
-   - Standalone (preview) -> uses in-memory sample data
+   DATA LAYER  ·  works in THREE modes:
+   - Inside Apps Script      -> google.script.run (real Sheets + Calendar)
+   - Vercel/estático + API   -> llama al Apps Script publicado como API (JSONP)
+   - Standalone (preview)     -> datos de ejemplo en memoria (no guarda)
    ========================================================================= */
-const IN_GAS = (typeof google !== 'undefined' && google.script && google.script.run);
+
+/* ►►► CONECTAR CON TU GOOGLE SHEET ◄◄◄
+   1) Implementá el Apps Script como Aplicación web con acceso "Cualquiera".
+   2) Copiá la URL que termina en /exec y pegala acá abajo entre las comillas.
+   3) (opcional) Poné el mismo token que en Code.gs para proteger la escritura.
+   Mientras API_URL esté vacío, la web funciona en modo demostración.        */
+const API_URL   = "";          // p.ej. "https://script.google.com/macros/s/AKfy…/exec"
+const API_TOKEN = "boda-cj-2026"; // debe coincidir con TOKEN en Code.gs
+
+const IN_GAS  = (typeof google !== 'undefined' && google.script && google.script.run);
+const USE_API = !IN_GAS && /\/macros\/s\//.test(API_URL);
 
 function server(fn, ...args){
   if(IN_GAS){
@@ -292,7 +303,31 @@ function server(fn, ...args){
       google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args);
     });
   }
-  return MockServer[fn](...args); // returns a Promise
+  if(USE_API) return apiCall(fn, args);
+  return MockServer[fn](...args); // demo en memoria
+}
+
+/* Llama a la API de Apps Script vía JSONP (evita CORS por completo) */
+let _jsonpSeq = 0;
+function apiCall(action, args){
+  return new Promise((resolve, reject)=>{
+    const cb = '__wcb_' + (++_jsonpSeq) + '_' + Date.now();
+    const s = document.createElement('script');
+    const to = setTimeout(()=>{ cleanup(); reject(new Error('Tiempo de espera agotado')); }, 25000);
+    function cleanup(){ clearTimeout(to); delete window[cb]; if(s.parentNode) s.parentNode.removeChild(s); }
+    window[cb] = (resp)=>{
+      cleanup();
+      if(resp && resp.error) reject(new Error(resp.error));
+      else resolve(resp ? resp.data : null);
+    };
+    const qs = 'action=' + encodeURIComponent(action)
+             + '&token='  + encodeURIComponent(API_TOKEN)
+             + '&payload='+ encodeURIComponent(JSON.stringify(args||[]))
+             + '&callback='+ cb;
+    s.src = API_URL + (API_URL.indexOf('?')>-1?'&':'?') + qs;
+    s.onerror = ()=>{ cleanup(); reject(new Error('No se pudo conectar con la API')); };
+    document.head.appendChild(s);
+  });
 }
 
 /* ---- Sample data (mirrors the reference, in PEN) ---- */

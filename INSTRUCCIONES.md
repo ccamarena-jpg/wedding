@@ -65,6 +65,44 @@ Podés editar directamente en el Sheet **o** desde la web; siempre están sincro
 
 ---
 
+## 🔗 Conectar el sitio de Vercel con tu base (Sheets + Calendar)
+
+Por defecto, **weddingjyc.vercel.app** funciona en *modo demostración* (no guarda nada).
+Para que el sitio público lea y escriba en tu Google Sheet real, hay que publicar el
+Apps Script como **API** y pegar su URL en el sitio. Una sola vez:
+
+1. En el editor de Apps Script (con `Code.gs` e `Index` ya pegados y `setup()` corrido),
+   andá a **Implementar ▸ Nueva implementación ▸ Aplicación web**.
+   - *Ejecutar como:* **Yo**
+   - *Quién tiene acceso:* **Cualquiera** ← imprescindible para que el sitio anónimo pueda llamar.
+   - **Implementar** y copiá la **URL** (termina en **`/exec`**).
+2. Abrí `Index.html`, buscá cerca del inicio del `<script>` la línea:
+   ```js
+   const API_URL   = "";
+   ```
+   y pegá tu URL entre las comillas:
+   ```js
+   const API_URL   = "https://script.google.com/macros/s/AKfy…/exec";
+   ```
+3. Guardá, y subí el cambio:
+   ```bash
+   git add Index.html && git commit -m "Conectar Vercel con la API" && git push
+   ```
+   Vercel redeploya solo y el sitio queda conectado a tu base. ✅
+
+**Cómo funciona:** el sitio llama al Apps Script por JSONP (evita CORS). Las lecturas son
+abiertas; las **escrituras** (guardar, borrar, sincronizar) exigen un `TOKEN` compartido
+(`boda-cj-2026`, definido igual en `Code.gs` y en `Index.html` — cambialo si querés).
+
+> ⚠️ **Seguridad:** al estar el sitio en internet y el token dentro del HTML público,
+> esta protección es *ligera* (frena abuso casual, no a alguien decidido). Como tus datos
+> ya son públicos en el repo/Vercel, la lectura no agrega exposición; la escritura sí queda
+> técnicamente accesible. Si querés algo 100% privado, usá **solo** la app nativa de Apps
+> Script con acceso "Solo yo" (no la conectes a Vercel). Para desconectar en cualquier
+> momento: dejá `API_URL = ""` y volvé a pushear, o borrá la implementación en Apps Script.
+
+---
+
 ## Estructura de archivos de esta carpeta
 ```
 wedding-planner/

@@ -36,15 +36,67 @@ const CONFIG_DEFAULT = {
   tipoCambio:3.4
 };
 
+/* Token compartido para proteger la ESCRITURA desde la web pública (Vercel).
+   Debe coincidir con API_TOKEN en Index.html. Cambialo por el que quieras.
+   Ojo: al estar en el HTML público no es un secreto fuerte; solo frena abuso casual. */
+const TOKEN = 'boda-cj-2026';
+
 /* ------------------------------------------------------------------ */
 /*  WEB APP ENTRY                                                       */
+/*  - Sin ?action  -> sirve la app HTML (uso nativo con google.script.run)
+ *  - Con ?action   -> responde JSON/JSONP (API para el sitio de Vercel)     */
 /* ------------------------------------------------------------------ */
-function doGet() {
+function doGet(e) {
+  if (e && e.parameter && e.parameter.action) return handleApi_(e);
   ensureSheets_();
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('Nuestra Boda · Organizador')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/* Permite también POST (por si en el futuro se usa fetch) */
+function doPost(e) { return handleApi_(e); }
+
+/* ------------------------------------------------------------------ */
+/*  API  ·  puente entre el sitio de Vercel y la base (Sheets/Calendar) */
+/* ------------------------------------------------------------------ */
+var WRITE_ACTIONS_ = { upsert: 1, remove: 1, saveConfig: 1, syncCita: 1 };
+
+function handleApi_(e) {
+  ensureSheets_();
+  var p = (e && e.parameter) || {};
+  var action = p.action;
+  var cb = p.callback;
+  var payload = [];
+  try { payload = p.payload ? JSON.parse(p.payload) : []; } catch (err) { payload = []; }
+
+  var out;
+  try {
+    if (WRITE_ACTIONS_[action] && TOKEN && p.token !== TOKEN) {
+      throw new Error('No autorizado (token inválido)');
+    }
+    var data;
+    switch (action) {
+      case 'getBootstrap': data = getBootstrap(); break;
+      case 'saveConfig':   data = saveConfig(payload[0]); break;
+      case 'upsert':       data = upsert(payload[0], payload[1]); break;
+      case 'remove':       data = remove(payload[0], payload[1]); break;
+      case 'syncCita':     data = syncCita(payload[0]); break;
+      default: throw new Error('Acción desconocida: ' + action);
+    }
+    out = { ok: true, data: data };
+  } catch (err) {
+    out = { error: String((err && err.message) || err) };
+  }
+
+  var body = JSON.stringify(out);
+  if (cb) {
+    return ContentService.createTextOutput(cb + '(' + body + ')')
+      .setMimeType(ContentService.MimeType.JAVASCRIPT);
+  }
+  return ContentService.createTextOutput(body)
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 /* ------------------------------------------------------------------ */
