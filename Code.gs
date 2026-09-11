@@ -1980,5 +1980,16 @@ const SAMPLE_ = {
       notas:"(sugerida — ajustá la fecha)",
       eventId:""
     }
+  ,
+    {id:"dc1",proveedor:"Geraldine (Clases de baile)",titulo:"Clase de baile",inicio:"2026-09-13T12:00",fin:"2026-09-13T13:30",estado:"Programado",notas:"Claudia y Jorge · Geraldine",eventId:""},
+    {id:"dc2",proveedor:"Geraldine (Clases de baile)",titulo:"Clase de baile",inicio:"2026-09-20T16:00",fin:"2026-09-20T17:30",estado:"Programado",notas:"Claudia y Jorge · Geraldine",eventId:""},
+    {id:"dc3",proveedor:"Geraldine (Clases de baile)",titulo:"Clase de baile",inicio:"2026-09-27T12:00",fin:"2026-09-27T13:30",estado:"Programado",notas:"Claudia y Jorge · Geraldine",eventId:""},
+    {id:"dc4",proveedor:"Geraldine (Clases de baile)",titulo:"Clase de baile",inicio:"2026-10-04T12:00",fin:"2026-10-04T13:30",estado:"Programado",notas:"Claudia y Jorge · Geraldine",eventId:""},
+    {id:"dc5",proveedor:"Geraldine (Clases de baile)",titulo:"Clase de baile",inicio:"2026-10-11T12:00",fin:"2026-10-11T13:30",estado:"Programado",notas:"Claudia y Jorge · Geraldine",eventId:""},
+    {id:"dc6",proveedor:"Geraldine (Clases de baile)",titulo:"Clase de baile",inicio:"2026-10-19T20:30",fin:"2026-10-19T22:00",estado:"Programado",notas:"Claudia y Jorge · Geraldine",eventId:""},
+    {id:"dc7",proveedor:"Geraldine (Clases de baile)",titulo:"Clase de baile",inicio:"2026-10-25T12:00",fin:"2026-10-25T13:30",estado:"Programado",notas:"Claudia y Jorge · Geraldine",eventId:""},
+    {id:"dc8",proveedor:"Geraldine (Clases de baile)",titulo:"Clase de baile",inicio:"2026-11-01T16:00",fin:"2026-11-01T17:30",estado:"Programado",notas:"Claudia y Jorge · Geraldine",eventId:""},
+    {id:"dc9",proveedor:"Geraldine (Clases de baile)",titulo:"Clase de baile",inicio:"2026-11-08T12:00",fin:"2026-11-08T13:30",estado:"Programado",notas:"Claudia y Jorge · Geraldine",eventId:""},
+    {id:"dc10",proveedor:"Geraldine (Clases de baile)",titulo:"Clase de baile",inicio:"2026-11-16T20:30",fin:"2026-11-16T22:00",estado:"Programado",notas:"Claudia y Jorge · Geraldine",eventId:""}
   ]
 };
