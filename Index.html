@@ -385,9 +385,25 @@ function server(fn, ...args){
   return MockServer[fn](...args); // demo en memoria
 }
 
-/* Llama a la API de Apps Script vía JSONP (evita CORS por completo) */
-let _jsonpSeq = 0;
+/* apiCall: intenta primero el PROXY del propio sitio (/api/sheet) — mismo
+   origen, así ningún bloqueador de anuncios/privacidad lo corta. Si el proxy
+   no existe o falla (p. ej. app nativa), cae a JSONP. */
 function apiCall(action, args){
+  return fetch('/api/sheet', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({action, payload: args||[]})
+  })
+  .then(r=>{ if(!r.ok) throw {proxyFail:true}; return r.json().catch(()=>{ throw {proxyFail:true}; }); })
+  .then(resp=>{ if(resp && resp.error) throw new Error(resp.error); return resp ? resp.data : null; })
+  .catch(err=>{
+    if(err && err.proxyFail){ console.warn('proxy no disponible, uso JSONP'); return jsonpCall(action, args); }
+    throw err;
+  });
+}
+
+/* Llama a la API de Apps Script vía JSONP (fallback; evita CORS) */
+let _jsonpSeq = 0;
+function jsonpCall(action, args){
   return new Promise((resolve, reject)=>{
     const cb = '__wcb_' + (++_jsonpSeq) + '_' + Date.now();
     const s = document.createElement('script');
