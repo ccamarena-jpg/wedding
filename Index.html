@@ -2217,6 +2217,11 @@ function eyebrow(a,b){ return `<div class="eyebrow"><span>${esc(a)}</span> / <b>
 function rope(){ return '<div class="rope"></div>'; }
 function refocus(id){ const el=document.getElementById(id); if(el){ el.focus(); const n=el.value.length; try{el.setSelectionRange(n,n);}catch(e){} } }
 async function refreshData(){ setSaving(true); try{ const b=await server('getBootstrap'); DB=b; render(); toast('Datos actualizados desde la hoja'); }catch(e){ toast('No se pudo actualizar'); console.error(e);} setSaving(false); }
+let sortPres={key:null,dir:1}, sortProv={key:null,dir:1}, sortInv={key:null,dir:1};
+function applySort(rows,st,cols){ if(!st.key)return rows; const col=cols.find(c=>c.k===st.key); if(!col)return rows;
+  return rows.slice().sort((a,b)=>{ let x=col.get(a),y=col.get(b); if(col.num)return((+x||0)-(+y||0))*st.dir; return String(x==null?'':x).localeCompare(String(y==null?'':y),'es',{numeric:true})*st.dir; }); }
+function setSort(which,key){ const st={pres:sortPres,prov:sortProv,inv:sortInv}[which]; if(st.key===key)st.dir*=-1; else{st.key=key;st.dir=1;} ({pres:vPresupuesto,prov:vProveedores,inv:vInvitados}[which])(); }
+function ths(which,st,cols){ return '<tr>'+cols.map(c=>c.k?`<th class="${c.num?'num':''}" style="cursor:pointer;user-select:none" onclick="setSort('${which}','${c.k}')">${esc(c.label)}${st.key===c.k?` <span style="color:var(--wine)">${st.dir>0?'▲':'▼'}</span>`:''}</th>`:`<th class="${c.num?'num':''}">${c.label||''}</th>`).join('')+'</tr>'; }
 function vhead(o){
   return `<header class="vhead">
     <div class="vhead-top">${eyebrow(o.a,o.b)}${o.meta?`<div class="vmeta">${o.meta}</div>`:''}</div>
@@ -2270,7 +2275,8 @@ let fPres={q:'',cat:''};
 function vPresupuesto(){
   const m=metrics(), porPagar=m.cotizado-m.pagado, over=overCats().length;
   const cats=[...new Set(DB.presupuesto.map(p=>p.categoria))].filter(Boolean);
-  const rows=DB.presupuesto.filter(p=>(!fPres.q||p.categoria.toLowerCase().includes(fPres.q.toLowerCase()))&&(!fPres.cat||p.categoria===fPres.cat)).map(p=>{
+  const colsP=[{k:'categoria',label:'Categoría',get:p=>p.categoria},{k:'estimado',label:'Estimado',num:1,get:p=>+p.estimado||0},{k:'cotizado',label:'Cotizado',num:1,get:p=>catCotizado(p.categoria)},{k:'pagado',label:'Pagado',num:1,get:p=>catPagado(p.categoria)},{label:''}];
+  const rows=applySort(DB.presupuesto.filter(p=>(!fPres.q||p.categoria.toLowerCase().includes(fPres.q.toLowerCase()))&&(!fPres.cat||p.categoria===fPres.cat)),sortPres,colsP).map(p=>{
     const est=+p.estimado||0,cot=catCotizado(p.categoria),pag=catPagado(p.categoria);
     return `<tr class="clk" onclick="editPresupuesto('${p.id}')"><td class="cat">${esc(p.categoria)}</td>
       <td class="num">${money(est)}</td>
@@ -2289,7 +2295,7 @@ function vPresupuesto(){
        <div class="inp search">${ISRCH}<input id="qPres" placeholder="Buscar categoría" value="${esc(fPres.q)}" oninput="fPres.q=this.value;vPresupuesto();refocus('qPres')"></div>
        <select class="inp" onchange="fPres.cat=this.value;vPresupuesto()"><option value="">Todas las categorías</option>${cats.map(c=>`<option ${fPres.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
      </div>
-     <table class="tbl"><thead><tr><th>Categoría</th><th class="num">Estimado</th><th class="num">Cotizado</th><th class="num">Pagado</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="5" class="sub" style="padding:24px">Sin categorías.</td></tr>'}</tbody></table>
+     <table class="tbl"><thead>${ths('pres',sortPres,colsP)}</thead><tbody>${rows||'<tr><td colspan="5" class="sub" style="padding:24px">Sin categorías.</td></tr>'}</tbody></table>
      ${resolver.length?`<h2 class="sec">Por resolver</h2>${resolver.map(p=>`<div class="res-row"><div class="cat">${esc(p.categoria)}</div><div class="sub" style="flex:1;padding:0 18px">${(+p.estimado||0)?'Sin cotización registrada':'Pendiente de cotización'}</div><a class="link" onclick="editProveedor()">Solicitar cotización ${IEXT}</a></div>`).join('')}`:''}`;
 }
 
@@ -2298,7 +2304,8 @@ let fProv={q:'',cat:'',estado:''}, selProv=null, provTab='resumen';
 function vProveedores(){
   const m=metrics(), porPagar=m.cotizado-m.pagado;
   const cats=[...new Set(DB.proveedores.map(v=>v.categoria))].filter(Boolean);
-  const list=DB.proveedores.filter(v=>(!fProv.q||(v.nombre+v.notas+v.contacto).toLowerCase().includes(fProv.q.toLowerCase()))&&(!fProv.cat||v.categoria===fProv.cat)&&(!fProv.estado||v.estado===fProv.estado));
+  const colsV=[{k:'nombre',label:'Proveedor',get:v=>v.nombre},{k:'categoria',label:'Categoría',get:v=>v.categoria},{k:'estado',label:'Estado',get:v=>v.estado},{k:'cotizado',label:'Cotizado',num:1,get:v=>+v.cotizado||0},{k:'pagado',label:'Pagado',num:1,get:v=>+v.pagado||0},{label:''}];
+  const list=applySort(DB.proveedores.filter(v=>(!fProv.q||(v.nombre+v.notas+v.contacto).toLowerCase().includes(fProv.q.toLowerCase()))&&(!fProv.cat||v.categoria===fProv.cat)&&(!fProv.estado||v.estado===fProv.estado)),sortProv,colsV);
   if(selProv && !DB.proveedores.find(v=>v.id===selProv)) selProv=null;
   const rows=list.map(v=>`<tr class="clk ${selProv===v.id?'sel':''}" onclick="selProv='${v.id}';vProveedores()">
       <td class="cat" style="font-size:15px">${esc(v.nombre)}</td><td class="sub">${esc(v.categoria||'—')}</td>
@@ -2309,7 +2316,7 @@ function vProveedores(){
        <select class="inp" onchange="fProv.cat=this.value;vProveedores()"><option value="">Categoría</option>${cats.map(c=>`<option ${fProv.cat===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
        <select class="inp" onchange="fProv.estado=this.value;vProveedores()"><option value="">Estado</option>${['Cotizado','Contratado','Pagado'].map(s=>`<option ${fProv.estado===s?'selected':''}>${s}</option>`).join('')}</select>
      </div>
-     <table class="tbl"><thead><tr><th>Proveedor</th><th>Categoría</th><th>Estado</th><th class="num">Cotizado</th><th class="num">Pagado</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="sub" style="padding:24px">Sin proveedores.</td></tr>'}</tbody></table>
+     <table class="tbl"><thead>${ths('prov',sortProv,colsV)}</thead><tbody>${rows||'<tr><td colspan="6" class="sub" style="padding:24px">Sin proveedores.</td></tr>'}</tbody></table>
      <div class="sub" style="margin-top:12px">Mostrando ${list.length} de ${DB.proveedores.length} proveedores</div>`;
   $('#content').innerHTML = vhead({a:'Nuestra boda',b:'Proveedores',title:'Las personas detrás del día.',lede:'Propuestas, acuerdos y próximos pasos.',
     actions:`<button class="btn solid" onclick="editProveedor()"><svg viewBox='0 0 24 24' fill='none'><path d='M12 5v14M5 12h14'/></svg> Proveedor</button>`})
@@ -2350,11 +2357,12 @@ function vInvitados(){
   + (invTab==='invitados'?invTable():seating());
 }
 function invTable(){
-  const list=DB.invitados.filter(g=>!fInv.q||(g.invitacion+g.grupo+g.mesa).toLowerCase().includes(fInv.q.toLowerCase()));
+  const colsI=[{k:'invitacion',label:'Invitación',get:g=>g.invitacion},{k:'personas',label:'Personas',num:1,get:g=>+g.personas||0},{k:'mesa',label:'Mesa',get:g=>g.mesa||'zzz'},{k:'confirmacion',label:'Confirmación',get:g=>g.confirmacion},{label:''}];
+  const list=applySort(DB.invitados.filter(g=>!fInv.q||(g.invitacion+g.grupo+g.mesa).toLowerCase().includes(fInv.q.toLowerCase())),sortInv,colsI);
   const rows=list.map(g=>`<tr class="clk" onclick="editInvitado('${g.id}')"><td><div class="cat" style="font-size:15px">${esc(g.invitacion)}</div><div class="sub">${esc(g.grupo||'')}${g.restricciones?` · <span style="color:var(--wine)">${esc(g.restricciones)}</span>`:''}</div></td>
      <td class="num">${g.personas}</td><td>${esc(g.mesa||'En espera')}</td><td>${/confirm/i.test(g.confirmacion)?'<span class="pill ok">Confirmado</span>':'<span class="pill rose">En espera</span>'}</td><td class="arr">${IARR}</td></tr>`).join('');
   return `<div class="toolbar"><div class="inp search">${ISRCH}<input id="qInv" placeholder="Buscar por nombre, grupo o mesa" value="${esc(fInv.q)}" oninput="fInv.q=this.value;vInvitados();refocus('qInv')"></div></div>
-    <table class="tbl"><thead><tr><th>Invitación</th><th class="num">Personas</th><th>Mesa</th><th>Confirmación</th><th></th></tr></thead><tbody>${rows||'<tr><td colspan="5" class="sub" style="padding:24px">Sin invitados.</td></tr>'}</tbody></table>`;
+    <table class="tbl"><thead>${ths('inv',sortInv,colsI)}</thead><tbody>${rows||'<tr><td colspan="5" class="sub" style="padding:24px">Sin invitados.</td></tr>'}</tbody></table>`;
 }
 function seatDots(cap,occ){ let h='',R=44; for(let i=0;i<cap;i++){ const a=(-90+i*360/cap)*Math.PI/180; const x=50+Math.cos(a)*R, y=50+Math.sin(a)*R; h+=`<span class="seat ${i<occ?'full':''}" style="left:${x}%;top:${y}%;transform:translate(-50%,-50%)"></span>`; } return h; }
 function mesaOcc(t){ return DB.invitados.filter(g=>g.mesa==='Mesa '+t).reduce((s,g)=>s+(+g.personas||0),0); }
