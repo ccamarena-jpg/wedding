@@ -390,7 +390,7 @@ function apiCall(action, args){
   return new Promise((resolve, reject)=>{
     const cb = '__wcb_' + (++_jsonpSeq) + '_' + Date.now();
     const s = document.createElement('script');
-    const to = setTimeout(()=>{ cleanup(); reject(new Error('Tiempo de espera agotado')); }, 25000);
+    const to = setTimeout(()=>{ cleanup(); reject(new Error('Tiempo de espera agotado')); }, 30000);
     function cleanup(){ clearTimeout(to); delete window[cb]; if(s.parentNode) s.parentNode.removeChild(s); }
     window[cb] = (resp)=>{
       cleanup();
@@ -2149,11 +2149,18 @@ function setSaving(s){ $('#saveStatus').textContent = s ? 'Guardando…' : 'Todo
    BOOT
    ========================================================================= */
 async function boot(){
-  try { DB = await server('getBootstrap'); }
-  catch(e){
-    console.warn('No se pudo leer la API, uso modo demostración:', e);
+  DB = null;
+  for(let attempt=1; attempt<=3 && !DB; attempt++){
+    try { DB = await server('getBootstrap'); }
+    catch(e){
+      console.warn('getBootstrap intento '+attempt+' falló:', e);
+      if(attempt<3) await new Promise(r=>setTimeout(r,1500));
+    }
+  }
+  if(!DB){
+    console.warn('Sin conexión a la API tras 3 intentos; modo demostración');
     DB = await MockServer.getBootstrap();
-    setTimeout(()=>toast('Sin conexión a la base · modo demostración'), 800);
+    setTimeout(()=>toast('Sin conexión con tu hoja · reintentá recargando'), 800);
   }
   const names = DB.config.pareja || 'Nuestra Boda';
   $('#brandNames').textContent = names;
