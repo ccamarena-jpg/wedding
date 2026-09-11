@@ -64,15 +64,18 @@ function doPost(e) { return handleApi_(e); }
 var WRITE_ACTIONS_ = { upsert: 1, remove: 1, saveConfig: 1, syncCita: 1 };
 
 function handleApi_(e) {
-  ensureSheets_();
   var p = (e && e.parameter) || {};
   var action = p.action;
   var cb = p.callback;
-  var payload = [];
-  try { payload = p.payload ? JSON.parse(p.payload) : []; } catch (err) { payload = []; }
 
   var out;
   try {
+    if (!SpreadsheetApp.getActive()) {
+      throw new Error('El script no está vinculado a una hoja. Abrí Apps Script desde Extensiones ▸ Apps Script dentro de tu Google Sheet (no como proyecto suelto).');
+    }
+    ensureSheets_();
+    var payload = [];
+    try { payload = p.payload ? JSON.parse(p.payload) : []; } catch (err) { payload = []; }
     if (WRITE_ACTIONS_[action] && TOKEN && p.token !== TOKEN) {
       throw new Error('No autorizado (token inválido)');
     }
